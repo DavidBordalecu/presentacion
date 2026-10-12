@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GutLab | Presentación para Inversores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     1. VARIABLES Y BASE
+     ============================================================ */
+  :root{
+    --salvia:#A3B18A;
+    --arena:#F4F1DE;
+    --bosque:#344E41;
+    --bosque-oscuro:#22332B;
+    --crema:#FAFAFA;
+    --tinta:#2B2D42;
+    --dorado:#C9A227;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    color:var(--tinta);
+    background:var(--crema);
+    overflow:hidden;
+  }
+  h1,h2,h3,.serif{font-family:'Lora',Georgia,serif;color:var(--bosque);line-height:1.15;}
+  .deck{position:fixed;inset:0;perspective:1700px;perspective-origin:50% 45%;}
+  .slide{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:6vh 6vw;
+    overflow-y:auto;
+    opacity:0;pointer-events:none;
+    transform:translateX(12%) rotateY(-14deg) scale(.88);
+    filter:blur(10px);
+    transform-style:preserve-3d;
+    transition:opacity .8s var(--ease),transform .9s var(--ease),filter .8s var(--ease);
+    will-change:transform,opacity,filter;
+  }
+  /* Las slides anteriores/posteriores esperan fuera de escena, rotadas (variante base) */
+  .slide.prev{transform:translateX(-12%) rotateY(14deg) scale(.88);}
+  .slide.next{transform:translateX(12%) rotateY(-14deg) scale(.88);}
+
+  /* ============================================================
+     VARIANTES DE TRANSICIÓN (se activan con data-anim en cada slide)
+     Cada una da un "ritmo" distinto al salto.
+     ============================================================ */
+
+  /* RISE: entra subiendo desde abajo y sale por arriba */
+  .slide[data-anim="rise"].next{transform:translate3d(0,36%,0) scale(.94);}
+  .slide[data-anim="rise"].prev{transform:translate3d(0,-36%,0) scale(.94);}
+
+  /* DROP: cae desde arriba (ideal para la tabla comparativa) */
+  .slide[data-anim="drop"].next{transform:translate3d(0,-44%,0) scale(.96);}
+  .slide[data-anim="drop"].prev{transform:translate3d(0,44%,0) scale(.96);}
+
+  /* ZOOM: crece y se enfoca desde el centro */
+  .slide[data-anim="zoom"]{transform:scale(.6);filter:blur(14px);transition-duration:1s;}
+  .slide[data-anim="zoom"].prev,
+  .slide[data-anim="zoom"].next{transform:scale(.6);}
+
+  /* FLIP: giro tipo tarjeta sobre el eje X */
+  .slide[data-anim="flip"]{transform:rotateX(-84deg) translateZ(150px) scale(.92);transform-origin:50% 100%;transition-duration:.72s;}
+  .slide[data-anim="flip"].prev{transform:rotateX(-84deg) translateZ(150px) scale(.92);}
+  .slide[data-anim="flip"].next{transform:rotateX(84deg) translateZ(150px) scale(.92);transform-origin:50% 0%;}
+
+  /* LATERAL: despliegue lateral amplio y marcado */
+  .slide[data-anim="lateral"].next{transform:translate3d(46%,0,0) rotateY(-10deg) scale(.9);}
+  .slide[data-anim="lateral"].prev{transform:translate3d(-46%,0,0) rotateY(10deg) scale(.9);}
+
+  /* DOOR: apertura radial para el cierre */
+  .slide[data-anim="door"]{transform:scale(1.3);filter:blur(16px);}
+  .slide[data-anim="door"].prev,
+  .slide[data-anim="door"].next{transform:scale(1.3);}
+
+  /* HERO: spotlight para la portada (nace pequeño y explota a pantalla) */
+  .slide[data-anim="hero"]{transform:scale(1.18);filter:blur(14px);}
+  .slide[data-anim="hero"].prev,
+  .slide[data-anim="hero"].next{transform:scale(.72);}
+
+  /* El estado activo siempre gana y vuelve al centro */
+  .slide.active{opacity:1;pointer-events:auto;transform:none;filter:none;}
+  .slide-inner{width:100%;max-width:1180px;transform:translateZ(0);}
+
+  /* ============================================================
+     2. NAVEGACIÓN
+     ============================================================ */
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--salvia);width:0;z-index:100;transition:width .4s var(--ease);}
+  .brand{position:fixed;top:22px;left:34px;z-index:90;font-family:'Lora',serif;font-weight:700;font-size:1.15rem;color:var(--bosque);}
+  .brand span{color:var(--salvia);}
+  .dots{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:90;display:flex;flex-direction:column;gap:10px;}
+  .dots button{width:9px;height:9px;border-radius:50%;border:none;background:rgba(52,78,65,.25);cursor:pointer;transition:.3s;padding:0;}
+  .dots button.on{background:var(--bosque);height:26px;border-radius:6px;}
+  .nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:90;display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.85);backdrop-filter:blur(8px);border:1px solid rgba(163,177,138,.35);border-radius:999px;padding:8px 12px;box-shadow:0 8px 30px rgba(52,78,65,.10);}
+  .nav button{background:var(--bosque);color:#fff;border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;transition:.25s;}
+  .nav button:hover{background:var(--salvia);transform:scale(1.08);}
+  .nav .count{font-size:.72rem;font-weight:600;color:var(--bosque);min-width:54px;text-align:center;letter-spacing:.05em;}
+
+  /* ============================================================
+     3. UTILIDADES
+     ============================================================ */
+  .eyebrow{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--salvia);margin-bottom:1rem;}
+  .lead{font-size:clamp(1rem,1.6vw,1.22rem);color:rgba(43,45,66,.72);line-height:1.65;}
+  .grid{display:grid;gap:22px;}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  .card{background:#fff;border:1px solid rgba(163,177,138,.28);border-radius:22px;padding:26px;box-shadow:0 10px 40px rgba(52,78,65,.06);transition:transform .35s var(--ease),box-shadow .35s var(--ease);}
+  .card:hover{transform:translateY(-6px);box-shadow:0 22px 50px rgba(52,78,65,.13);}
+  .card .big{font-family:'Lora',serif;font-size:2.6rem;font-weight:700;color:var(--bosque);}
+  .card .ico{font-size:1.7rem;display:block;margin-bottom:12px;}
+  .muted{color:rgba(43,45,66,.6);}
+  .tag{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;padding:6px 13px;border-radius:999px;background:var(--arena);color:var(--bosque);}
+  .accent{color:var(--salvia);}
+  /* Entrada escalonada de contenido: sube, escala y se enfoca */
+  .reveal{opacity:0;transform:translateY(46px) scale(.965);filter:blur(9px);transition:opacity .85s var(--ease),transform .85s var(--ease),filter .85s var(--ease);}
+  .slide.active .reveal{opacity:1;transform:none;filter:none;}
+  .slide.active .reveal.d1{transition-delay:.14s;}
+  .slide.active .reveal.d2{transition-delay:.28s;}
+  .slide.active .reveal.d3{transition-delay:.42s;}
+  .slide.active .reveal.d4{transition-delay:.56s;}
+
+  /* Empuje inicial del contenedor al activarse cada slide */
+  .slide.active .slide-inner{animation:innerIn .95s var(--ease) both;}
+  @keyframes innerIn{
+    from{opacity:.35;transform:translateY(30px) scale(.985);}
+    to{opacity:1;transform:none;}
+  }
+
+  /* Barrido dramático entre diapositivas (cambia según la variante) */
+  .sweep{position:fixed;top:0;bottom:0;left:0;width:100%;pointer-events:none;z-index:99;
+    background:linear-gradient(100deg,rgba(34,51,43,0) 0%,rgba(34,51,43,.92) 45%,rgba(163,177,138,.55) 60%,rgba(34,51,43,.92) 75%,rgba(34,51,43,0) 100%);
+    transform:translateX(-120%) skewX(-10deg);}
+  .sweep.go{animation:sweepGo .85s var(--ease);}
+  @keyframes sweepGo{
+    0%{transform:translateX(-120%) skewX(-10deg);}
+    100%{transform:translateX(120%) skewX(-10deg);}
+  }
+  /* Variante vertical (para slides que suben/bajan) */
+  .sweep.v{background:linear-gradient(180deg,rgba(34,51,43,0) 0%,rgba(34,51,43,.92) 45%,rgba(163,177,138,.55) 60%,rgba(34,51,43,.92) 75%,rgba(34,51,43,0) 100%);}
+  .sweep.v.go{animation:sweepGoV .85s var(--ease);}
+  @keyframes sweepGoV{
+    0%{transform:translateY(-120%) skewY(-8deg);}
+    100%{transform:translateY(120%) skewY(-8deg);}
+  }
+  /* Variante flash: velo de pantalla completa SIN círculo central (solo ilumina y se va) */
+  .sweep.flash{background:linear-gradient(120deg,rgba(34,51,43,0) 0%,rgba(52,78,65,.5) 50%,rgba(34,51,43,0) 100%);transform:none;opacity:0;}
+  .sweep.flash.go{animation:sweepFlash .7s var(--ease);}
+  @keyframes sweepFlash{
+    0%{opacity:0;}
+    40%{opacity:.85;}
+    100%{opacity:0;}
+  }
+
+  /* ============================================================
+     4. PORTADA
+     ============================================================ */
+  #s0{background:radial-gradient(1200px 700px at 78% 18%,rgba(163,177,138,.34),transparent 60%),linear-gradient(150deg,#344E41,#22332B);}
+  #s0 .slide-inner{color:#fff;}
+  #s0 h1{color:#fff;font-size:clamp(2.4rem,6.4vw,5rem);letter-spacing:-.02em;}
+  #s0 .eyebrow{color:var(--salvia);}
+  #s0 .lead{color:rgba(255,255,255,.8);max-width:640px;}
+  .hero-badge{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:999px;font-size:.78rem;margin-bottom:26px;}
+  .hero-stats{display:flex;gap:40px;margin-top:44px;flex-wrap:wrap;}
+  .hero-stats .n{font-family:'Lora',serif;font-size:2.3rem;font-weight:700;color:var(--salvia);}
+  .hero-stats .l{font-size:.76rem;color:rgba(255,255,255,.65);letter-spacing:.08em;text-transform:uppercase;}
+  .scroll-hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.55);font-size:.72rem;letter-spacing:.14em;animation:bob 2s infinite;}
+  @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,7px);}}
+
+  /* ============================================================
+     5. BARRAS / COMPARATIVA
+     ============================================================ */
+  .bar-track{background:rgba(163,177,138,.22);border-radius:999px;height:40px;overflow:hidden;position:relative;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--bosque),var(--salvia));border-radius:999px;display:flex;align-items:center;padding-left:16px;color:#fff;font-weight:600;font-size:.82rem;width:0;transition:width 1.4s var(--ease);}
+  .slide.active .bar-fill{width:var(--w);}
+  .compare{width:100%;border-collapse:collapse;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(52,78,65,.08);}
+  .compare th,.compare td{padding:15px 18px;text-align:left;font-size:.88rem;border-bottom:1px solid rgba(163,177,138,.18);}
+  .compare th{background:var(--bosque);color:#fff;font-size:.76rem;text-transform:uppercase;letter-spacing:.1em;}
+  .compare td:first-child{font-weight:600;color:var(--bosque);}
+  .compare .yes{color:#2e7d32;font-weight:700;}
+  .compare .no{color:#c0392b;}
+
+  /* ============================================================
+     6. TIMELINE / ROADMAP
+     ============================================================ */
+  .timeline{position:relative;display:flex;gap:0;margin-top:18px;}
+  .timeline::before{content:"";position:absolute;top:22px;left:0;right:0;height:3px;background:rgba(163,177,138,.35);}
+  .tl-item{flex:1;position:relative;padding-top:56px;cursor:pointer;transition:.3s;}
+  .tl-dot{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--salvia);transition:.3s;}
+  .tl-item:hover .tl-dot,.tl-item.on .tl-dot{border-color:var(--bosque);transform:translateX(-50%) scale(1.25);}
+  .tl-item.on .tl-dot{background:var(--bosque);}
+  .tl-card{background:#fff;border:1px solid rgba(163,177,138,.28);border-radius:16px;padding:16px;text-align:center;min-height:150px;}
+  .tl-card h4{font-size:.95rem;margin-bottom:6px;}
+  .tl-card p{font-size:.78rem;color:rgba(43,45,66,.65);line-height:1.5;}
+  .tl-phase{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--salvia);}
+
+  /* ============================================================
+     7. INVERSIÓN
+     ============================================================ */
+  #s10{background:linear-gradient(150deg,#22332B,#344E41);}
+  #s10 .slide-inner{color:#fff;}
+  #s10 h1,#s10 h2{color:#fff;}
+  #s10 .lead{color:rgba(255,255,255,.78);}
+  .fund{display:flex;flex-direction:column;gap:14px;}
+  .fund-row{display:flex;align-items:center;gap:14px;}
+  .fund-row .lbl{width:190px;font-size:.84rem;color:rgba(255,255,255,.85);}
+  .fund-row .tr{flex:1;height:26px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden;}
+  .fund-row .tr i{display:block;height:100%;background:linear-gradient(90deg,var(--salvia),var(--dorado));border-radius:999px;width:0;transition:width 1.3s var(--ease);}
+  #s10.active .fund-row .tr i{width:var(--w);}
+  .fund-row .pc{width:52px;text-align:right;font-weight:700;color:var(--salvia);font-size:.85rem;}
+  .cta{display:inline-block;background:#fff;color:var(--bosque);padding:16px 40px;border-radius:999px;font-weight:600;text-decoration:none;transition:.3s;border:none;cursor:pointer;font-size:1rem;}
+  .cta:hover{background:var(--salvia);color:#fff;transform:translateY(-2px);}
+
+  @media(max-width:820px){
+    .g2,.g3,.g4{grid-template-columns:1fr;}
+    .hero-stats{gap:24px;}
+    .timeline{flex-direction:column;gap:24px;}
+    .timeline::before{display:none;}
+    .tl-item{padding-top:0;padding-left:44px;}
+    .tl-dot{top:0;left:8px;}
+    .dots{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="sweep" id="sweep"></div>
+<div class="brand" id="brand">GutLab<span>.</span></div>
+
+<div class="deck" id="deck">
+
+  <!-- ============ 0. PORTADA ============ -->
+  <section class="slide active" id="s0" data-anim="hero">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">Salud intestinal consciente · Ronda de inversión</div>
+      <h1 class="reveal d1">El futuro del bienestar<br>empieza en el intestino.</h1>
+      <p class="lead reveal d2" style="margin-top:22px">
+        GutLab es una marca de nutrición y microbiota con respaldo científico,
+        plataforma de e-commerce funcional y un programa de fidelidad diseñado
+        para retener clientes de por vida.
+      </p>
+      <div class="hero-stats reveal d3">
+        <div><div class="n" data-count="32">0</div><div class="l">Productos</div></div>
+        <div><div class="n" data-count="4">0</div><div class="l">Categorías</div></div>
+        <div><div class="n">100%</div><div class="l">Evidencia documentada</div></div>
+        <div><div class="n" data-count="3">0</div><div class="l">Canales de venta</div></div>
+      </div>
+    </div>
+    <div class="scroll-hint">USÁ ← → PARA NAVEGAR</div>
+  </section>
+
+  <!-- ============ 1. PROBLEMA / OPORTUNIDAD ============ -->
+  <section class="slide" id="s1" data-anim="rise">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">01 · La oportunidad</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">Un mercado enorme y aún mal atendido.</h1>
+      <p class="lead reveal d2" style="max-width:760px;margin:16px 0 34px">
+        La salud digestiva y el bienestar intestinal son una de las categorías de
+        mayor crecimiento global. Sin embargo, la mayoría de las marcas venden sin
+        evidencia, sin transparencia y sin una experiencia de compra real.
+      </p>
+      <div class="grid g3 reveal d3">
+        <div class="card"><span class="ico">📈</span><h3 style="font-size:1.05rem">Demanda creciente</h3><p class="muted" style="font-size:.85rem;margin-top:8px">El interés por microbiota, probióticos y funcionalidad digestiva crece año a año.</p></div>
+        <div class="card"><span class="ico">🕳️</span><h3 style="font-size:1.05rem">Falta de transparencia</h3><p class="muted" style="font-size:.85rem;margin-top:8px">Pocas marcas documentan cepas, dosis y bibliografía. Esa brecha es nuestra entrada.</p></div>
+        <div class="card"><span class="ico">🔁</span><h3 style="font-size:1.05rem">Baja retención</h3><p class="muted" style="font-size:.85rem;margin-top:8px">El recompra casi no existe. Nosotros la convertimos en el centro del negocio.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. SOLUCIÓN ============ -->
+  <section class="slide" id="s2" data-anim="zoom">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">02 · La solución</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">GutLab: producto + evidencia + experiencia.</h1>
+      <p class="lead reveal d2" style="max-width:760px;margin:16px 0 34px">
+        No vendemos solo suplementos. Construimos un ecosistema de salud intestinal
+        con una plataforma digital completa y lista para escalar.
+      </p>
+      <div class="grid g4 reveal d3">
+        <div class="card"><span class="ico">🌿</span><h3 style="font-size:.98rem">Fórmulas limpias</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Sin edulcorantes ni relleno.</p></div>
+        <div class="card"><span class="ico">🔬</span><h3 style="font-size:.98rem">Respaldo científico</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Bibliografía por producto.</p></div>
+        <div class="card"><span class="ico">💻</span><h3 style="font-size:.98rem">Plataforma completa</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Tienda, checkout, cuentas y admin.</p></div>
+        <div class="card"><span class="ico">🤝</span><h3 style="font-size:.98rem">Atención humana</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Personas reales, no solo IA.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. PRODUCTO ============ -->
+  <section class="slide" id="s3" data-anim="flip">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">03 · El producto</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">Catálogo para cada momento de la rutina.</h1>
+      <div class="grid g4 reveal d2" style="margin-top:30px">
+        <div class="card" style="text-align:center"><span class="ico">🧬</span><h3 style="font-size:1rem">Packs y rutinas</h3><p class="muted" style="font-size:.8rem;margin-top:6px">Sistemas combinados por objetivo.</p></div>
+        <div class="card" style="text-align:center"><span class="ico">🦠</span><h3 style="font-size:1rem">Suplementos</h3><p class="muted" style="font-size:.8rem;margin-top:6px">Probióticos, enzimas, fibra, minerales.</p></div>
+        <div class="card" style="text-align:center"><span class="ico">🍹</span><h3 style="font-size:1rem">Alimentos funcionales</h3><p class="muted" style="font-size:.8rem;margin-top:6px">Kombucha, kéfir, granolas, miel.</p></div>
+        <div class="card" style="text-align:center"><span class="ico">🗂️</span><h3 style="font-size:1rem">Accesorios y kits</h3><p class="muted" style="font-size:.8rem;margin-top:6px">Botellas, organizadores, análisis.</p></div>
+      </div>
+      <div class="grid g3 reveal d3" style="margin-top:26px">
+        <div class="card"><div class="big">32</div><p class="muted" style="font-size:.82rem">SKUs listos en catálogo</p></div>
+        <div class="card"><div class="big">4</div><p class="muted" style="font-size:.82rem">Familias de producto</p></div>
+        <div class="card"><div class="big">1-2</div><p class="muted" style="font-size:.82rem">Lanzamientos nuevos por trimestre (plan)</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. TRACCIÓN / LO YA CONSTRUIDO ============ -->
+  <section class="slide" id="s4" data-anim="lateral">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">04 · Tracción</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">No es una idea: ya está construido.</h1>
+      <p class="lead reveal d2" style="max-width:780px;margin:16px 0 30px">
+        Mientras otras marcas muestran un logo y una promesa, GutLab ya tiene una
+        plataforma digital funcional de punta a punta.
+      </p>
+      <div class="grid g3 reveal d3">
+        <div class="card"><span class="ico">🛒</span><h3 style="font-size:1rem">E-commerce funcional</h3><p class="muted" style="font-size:.82rem;margin-top:8px">Catálogo, carrito, checkout y respaldo científico interactivo.</p></div>
+        <div class="card"><span class="ico">🔐</span><h3 style="font-size:1rem">Cuentas y fidelidad</h3><p class="muted" style="font-size:.82rem;margin-top:8px">Registro directo, puntos, descuentos y regalos.</p></div>
+        <div class="card"><span class="ico">🤝</span><h3 style="font-size:1rem">Canal mayorista</h3><p class="muted" style="font-size:.82rem;margin-top:8px">Portal propio con precios por volumen y mínimos.</p></div>
+        <div class="card"><span class="ico">🎛️</span><h3 style="font-size:1rem">Panel de administración</h3><p class="muted" style="font-size:.82rem;margin-top:8px">Pedidos, métricas, promociones y aprobación de mayoristas.</p></div>
+        <div class="card"><span class="ico">💬</span><h3 style="font-size:1rem">Mensajería interna</h3><p class="muted" style="font-size:.82rem;margin-top:8px">Atención postventa directa con cada comercio.</p></div>
+        <div class="card"><span class="ico">📊</span><h3 style="font-size:1rem">Tableros de datos</h3><p class="muted" style="font-size:.82rem;margin-top:8px">Productos más pedidos y compras por mayorista.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. MODELO DE NEGOCIO ============ -->
+  <section class="slide" id="s5" data-anim="rise">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">05 · Modelo de negocio</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">Cuatro motores de ingreso.</h1>
+      <div class="grid g4 reveal d2" style="margin-top:30px">
+        <div class="card"><span class="ico">🛍️</span><h3 style="font-size:.98rem">Retail online</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Venta directa al consumidor.</p></div>
+        <div class="card"><span class="ico">🔁</span><h3 style="font-size:.98rem">Suscripción</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Ingreso recurrente y predecible.</p></div>
+        <div class="card"><span class="ico">📦</span><h3 style="font-size:.98rem">Mayorista</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Volumen y rotación para comercios.</p></div>
+        <div class="card"><span class="ico">🎁</span><h3 style="font-size:.98rem">Merch y kits</h3><p class="muted" style="font-size:.8rem;margin-top:8px">Márgenes altos y refuerzo de marca.</p></div>
+      </div>
+      <div class="grid g3 reveal d3" style="margin-top:26px">
+        <div class="card"><div class="big">40–60%</div><p class="muted" style="font-size:.82rem">Margen minorista objetivo</p></div>
+        <div class="card"><div class="big">12+</div><p class="muted" style="font-size:.82rem">Unidades mínimas mayoristas</p></div>
+        <div class="card"><div class="big">Hasta −40%</div><p class="muted" style="font-size:.82rem">Descuento por volumen</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6. FIDELIZACIÓN ============ -->
+  <section class="slide" id="s6" data-anim="zoom">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">06 · El diferencial clave</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">Vender es fácil. Retener es el negocio.</h1>
+      <p class="lead reveal d2" style="max-width:800px;margin:16px 0 30px">
+        El programa de fidelidad de GutLab convierte cada compra en un motivo para volver:
+        premios, descuentos y regalos que solo existen para nuestra comunidad.
+      </p>
+      <div class="grid g4 reveal d3">
+        <div class="card" style="text-align:center"><div class="big">1</div><p class="muted" style="font-size:.82rem">Punto por cada $1 comprado</p></div>
+        <div class="card" style="text-align:center"><div class="big">5ª</div><p class="muted" style="font-size:.82rem">Compra del mes = descuento</p></div>
+        <div class="card" style="text-align:center"><div class="big">🎁</div><p class="muted" style="font-size:.82rem">Regalos por monto acumulado</p></div>
+        <div class="card" style="text-align:center"><div class="big">🛍️</div><p class="muted" style="font-size:.82rem">Canje de puntos por merch</p></div>
+      </div>
+      <div class="card reveal d4" style="margin-top:26px;background:var(--arena);border-color:transparent">
+        <p style="font-size:.92rem;color:var(--bosque)"><strong>Regla de oro:</strong> los beneficios aplican solo a usuarios registrados directos.
+        Los accesos con redes sociales compran, pero no acumulan. Esto nos da datos propios,
+        contacto directo y control total de la relación con el cliente.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 7. MAYORISTA ============ -->
+  <section class="slide" id="s7" data-anim="lateral">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">07 · Escalabilidad B2B</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">Un canal mayorista que se siente VIP.</h1>
+      <p class="lead reveal d2" style="max-width:780px;margin:16px 0 30px">
+        Cada comercio tiene su portal propio con precios por volumen, un asesor
+        dedicado y comunicación directa. Así se compra una vez… y se vuelve siempre.
+      </p>
+      <div class="grid g2 reveal d3">
+        <div class="card"><h3 style="font-size:1rem;margin-bottom:14px">Precios por volumen</h3>
+          <div class="bar-track" style="margin-bottom:10px"><div class="bar-fill" style="--w:50%">12–23 u · −20%</div></div>
+          <div class="bar-track" style="margin-bottom:10px"><div class="bar-fill" style="--w:72%">24–47 u · −30%</div></div>
+          <div class="bar-track"><div class="bar-fill" style="--w:100%">48+ u · −40%</div></div>
+        </div>
+        <div class="card"><h3 style="font-size:1rem;margin-bottom:14px">Herramientas del portal</h3>
+          <p class="muted" style="font-size:.85rem;line-height:2">
+            ✅ Catálogo con precios dinámicos<br>
+            ✅ Caja mayorista con mínimos<br>
+            ✅ Historial y cuenta corriente<br>
+            ✅ Promociones exclusivas<br>
+            ✅ Mensajería directa con GutLab
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8. DIFERENCIACIÓN ============ -->
+  <section class="slide" id="s8" data-anim="drop">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">08 · Por qué nosotros</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">GutLab vs. un comercio de suplementos común.</h1>
+      <div class="reveal d2" style="margin-top:26px;overflow-x:auto">
+        <table class="compare">
+          <thead><tr><th>Aspecto</th><th>GutLab</th><th>Comercio tradicional</th></tr></thead>
+          <tbody>
+            <tr><td>Tecnología propia</td><td class="yes">Plataforma completa</td><td class="no">Solo redes sociales</td></tr>
+            <tr><td>Fidelización</td><td class="yes">Puntos, premios y regalos</td><td class="no">Precio, si acaso</td></tr>
+            <tr><td>Canal mayorista</td><td class="yes">Portal VIP dedicado</td><td class="no">Venta informal</td></tr>
+            <tr><td>Transparencia</td><td class="yes">Evidencia por producto</td><td class="no">Promesas vacías</td></tr>
+            <tr><td>Datos del cliente</td><td class="yes">Propios y accionables</td><td class="no">Depende de terceros</td></tr>
+            <tr><td>Atención</td><td class="yes">Humana y directa</td><td class="no">Genérica o ausente</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9. ROADMAP ============ -->
+  <section class="slide" id="s9" data-anim="lateral">
+    <div class="slide-inner">
+      <div class="eyebrow reveal">09 · Hacia dónde vamos</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">Roadmap de crecimiento.</h1>
+      <div class="timeline reveal d2" id="timeline">
+        <div class="tl-item on" data-info="Base digital funcional, catálogo, fidelidad y canal mayorista ya construidos.">
+          <div class="tl-dot"></div>
+          <div class="tl-card"><div class="tl-phase">Hoy</div><h4>Plataforma lista</h4><p>Tienda, cuentas, admin y mayoristas.</p></div>
+        </div>
+        <div class="tl-item" data-info="Integración real de pagos y lanzamiento comercial con campaña de adquisición.">
+          <div class="tl-dot"></div>
+          <div class="tl-card"><div class="tl-phase">Corto plazo</div><h4>Lanzamiento</h4><p>Mercado Pago, marca y go-to-market.</p></div>
+        </div>
+        <div class="tl-item" data-info="Suscripción recurrente, test de microbiota e IA de personalización.">
+          <div class="tl-dot"></div>
+          <div class="tl-card"><div class="tl-phase">Mediano plazo</div><h4>Expansión</h4><p>Suscripción y personalización.</p></div>
+        </div>
+        <div class="tl-item" data-info="Marca blanca, expansión regional y nuevos canales profesionales.">
+          <div class="tl-dot"></div>
+          <div class="tl-card"><div class="tl-phase">Largo plazo</div><h4>Escala regional</h4><p>B2B, marca blanca y exportación.</p></div>
+        </div>
+      </div>
+      <div class="card reveal d3" id="roadmap-info" style="margin-top:24px;background:var(--arena);border-color:transparent;min-height:70px">
+        <p style="font-size:.9rem;color:var(--bosque)">Base digital funcional, catálogo, fidelidad y canal mayorista ya construidos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 10. INVERSIÓN ============ -->
+  <section class="slide" id="s10" data-anim="door">
+    <div class="slide-inner">
+      <div class="eyebrow reveal" style="color:var(--salvia)">10 · La propuesta</div>
+      <h1 class="reveal d1" style="font-size:clamp(1.8rem,3.6vw,2.8rem)">¿Por qué invertir en GutLab?</h1>
+      <p class="lead reveal d2" style="max-width:760px;margin:16px 0 34px">
+        Ya redujimos el riesgo: la tecnología existe, el modelo está definido y el
+        mercado está en expansión. Tu capital acelera la salida al mercado.
+      </p>
+      <div class="grid g2 reveal d3">
+        <div class="fund">
+          <div class="fund-row"><span class="lbl">Producto y stock inicial</span><span class="tr"><i style="--w:35%"></i></span><span class="pc">35%</span></div>
+          <div class="fund-row"><span class="lbl">Marketing y adquisición</span><span class="tr"><i style="--w:30%"></i></span><span class="pc">30%</span></div>
+          <div class="fund-row"><span class="lbl">Tecnología y plataforma</span><span class="tr"><i style="--w:20%"></i></span><span class="pc">20%</span></div>
+          <div class="fund-row"><span class="lbl">Operaciones y legal</span><span class="tr"><i style="--w:15%"></i></span><span class="pc">15%</span></div>
+          <p class="muted" style="color:rgba(255,255,255,.6);font-size:.78rem;margin-top:6px">* Distribución de uso de fondos (provisoria, sujeta a la ronda).</p>
+        </div>
+        <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff">
+          <h3 style="color:#fff;font-size:1.15rem;margin-bottom:14px">Lo que buscás con tu inversión</h3>
+          <p style="font-size:.88rem;line-height:2;color:rgba(255,255,255,.85)">
+            ✅ Plataforma ya construida<br>
+            ✅ Modelo de ingresos recurrente<br>
+            ✅ Marca y catálogo definidos<br>
+            ✅ Canal B2B con margen por volumen<br>
+            ✅ Fidelización = LTV alto
+          </p>
+        </div>
+      </div>
+      <div class="reveal d4" style="margin-top:34px;text-align:center">
+        <button class="cta" onclick="irA(0)">Volver al inicio</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="nav">
+  <button onclick="prev()" aria-label="Anterior">←</button>
+  <span class="count" id="count">1 / 11</span>
+  <button onclick="next()" aria-label="Siguiente">→</button>
+</div>
+
+<script>
+  // ============================================================
+  // NAVEGACIÓN DEL DECK
+  // ============================================================
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let idx = 0;
+
+  // Crea los dots de navegación
+  const dots = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Ir a la diapositiva ' + (i + 1));
+    b.addEventListener('click', () => irA(i));
+    dots.appendChild(b);
+  });
+  const dotEls = Array.from(dots.children);
+
+  function irA(i, inicial) {
+    const nuevo = Math.max(0, Math.min(slides.length - 1, i));
+    if (nuevo === idx && !inicial) return; // evita re-animar si no cambia de slide
+
+    // Dispara el barrido direccional (no en la primera carga)
+    if (!inicial) {
+      const sweep = document.getElementById('sweep');
+      const anim = slides[nuevo].dataset.anim || 'slide';
+      // El estilo del barrido acompaña a la variante de la slide destino
+      const estilo = { rise:'v', drop:'v', hero:'flash', zoom:'flash', door:'flash' }[anim] || '';
+      sweep.className = 'sweep' + (estilo ? ' ' + estilo : '');
+      void sweep.offsetWidth; // reinicia la animación
+      sweep.classList.add('go');
+    }
+
+    idx = nuevo;
+
+    // Coloca cada slide como activa, anterior (izquierda) o siguiente (derecha)
+    slides.forEach((s, n) => {
+      s.classList.toggle('active', n === idx);
+      s.classList.toggle('prev', n < idx);
+      s.classList.toggle('next', n > idx);
+    });
+    dotEls.forEach((d, n) => d.classList.toggle('on', n === idx));
+    document.getElementById('count').innerText = (idx + 1) + ' / ' + slides.length;
+    document.getElementById('progress').style.width = ((idx + 1) / slides.length * 100) + '%';
+    slides[idx].scrollTop = 0;
+
+    // Reinicia los contadores cada vez que volvemos a la portada
+    if (idx === 0 && !inicial) animarContadores();
+  }
+  function next() { irA(idx + 1); }
+  function prev() { irA(idx - 1); }
+
+  // Teclado
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); next(); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
+    if (e.key === 'Home') irA(0);
+    if (e.key === 'End') irA(slides.length - 1);
+  });
+
+  // Rueda del mouse (con freno para no saltar varias slides)
+  let lock = false;
+  window.addEventListener('wheel', (e) => {
+    if (lock) return;
+    if (Math.abs(e.deltaY) < 24) return;
+    lock = true;
+    e.deltaY > 0 ? next() : prev();
+    setTimeout(() => { lock = false; }, 900);
+  }, { passive: true });
+
+  // Swipe táctil
+  let tx = 0;
+  window.addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+  window.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 55) dx < 0 ? next() : prev();
+  }, { passive: true });
+
+  // ============================================================
+  // CONTADORES ANIMADOS (portada)
+  // ============================================================
+  function animarContadores() {
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const fin = Number(el.dataset.count);
+      let actual = 0;
+      const paso = Math.max(1, Math.ceil(fin / 30));
+      const t = setInterval(() => {
+        actual += paso;
+        if (actual >= fin) { actual = fin; clearInterval(t); }
+        el.innerText = actual;
+      }, 45);
+    });
+  }
+  // Se disparan al mostrar la portada
+  setTimeout(animarContadores, 500);
+
+  // ============================================================
+  // TIMELINE INTERACTIVA (roadmap)
+  // ============================================================
+  document.querySelectorAll('#timeline .tl-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('#timeline .tl-item').forEach(i => i.classList.remove('on'));
+      item.classList.add('on');
+      document.getElementById('roadmap-info').querySelector('p').innerText = item.dataset.info;
+    });
+  });
+
+  // Estado inicial (sin barrido en la primera carga)
+  irA(0, true);
+</script>
+</body>
+</html>
